@@ -5,21 +5,25 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import upload from '../middleware/uploadimage.js';
-
-
+import { encryptDES, decryptDES } from '../utils/desEncryption.js';
+import session from 'express-session';
 
 const auth = express();
 auth.use(express.Router());
 auth.use(cors());
-
-const key = "secretkey";
-
+const key = "secretkey"; 
+const desKey = "encryptionkey";
+auth.use(session({
+    secret: 'yourSecretKeyHere', 
+    resave: false,
+    saveUninitialized: false,
+}));
 
 auth.post('/signup',
     body("email").isEmail().withMessage("please enter a valid email!"),
     body("password").isLength({ min: 3 }).withMessage("password must be at least 3 chars long!"),
     body("user_name").isLength({ min: 3 }).withMessage("username must be at least 3 chars long!"),
-    body("phonenumber").isLength({ min: 3 }).withMessage("phonenumber must be at least 11 number!"),
+    body("phonenumber").isLength({ min: 11 }).withMessage("phonenumber must be at least 11 number!"),
     upload,
 
     async (req, res) => {
@@ -106,10 +110,11 @@ auth.post('/login',
             }
             const user_id = user[0].user_id;
             await query("UPDATE user SET status = ? WHERE user_id = ?", [1, user_id]);
+            req.session.user_id = user_id;
+            req.session.type = type;
             const token = jwt.sign({ user_id }, key);
-            res.status(200).json({ login: true, token : token, type : type });
-
-
+            const encryptedToken = encryptDES(token, desKey);
+            res.status(200).json({ login: true, token: encryptedToken, type: type });
         } catch (err) {
            console.log(err);
            return res.status(500).json(err);
@@ -122,16 +127,19 @@ auth.get('/logout', async (req, res) => {
         if (!token) {
             return res.status(401).json({ user: false, msg: "Unauthorized" });
         } else {
-            token = token.split(" ")[1];
-            let authUser = jwt.verify(token, key);
+            const decryptedToken = decryptDES(token.split(" ")[1], desKey);
+            let authUser = jwt.verify(decryptedToken, key);
             req.authUserid = authUser.user_id;
             await query("UPDATE user SET status = ? WHERE user_id = ?", [0, authUser.user_id]);
-            res.status(200).json({ logout: true });
-        }
+            req.session.destroy();
+            
+                res.status(200).json({ logout: true });
+            }    
     } catch (err) {
         return res.status(500).json(err);
     }
 });
+
 
 
 export default auth;

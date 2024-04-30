@@ -1,27 +1,12 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import { decryptDES } from '../utils/desEncryption.js'; 
 
 
 
 
-// const user = async (req, res, next) => {
-//     try {
-//         const { token } = req.headers;
-//         const sql = "SELECT * FROM user WHERE token = ?";
-//         const result = await query(sql, [token]);
-//         if (result[0] && result[0].type === 0) {
-//             res.locals.user = result[0];
-//             next();
-//         } else {
-//             res.status(401).send("Unauthorized");
-//         }
-//     } catch (err) {
-//         console.error(err.message);
-//         res.status(500).send("user Error");
-//     }
-// }
 const key = "secretkey";
-
+const desKey = "encryptionkey";
 
 const user = async (req, res, next) => {
     try {
@@ -29,8 +14,8 @@ const user = async (req, res, next) => {
         if (!token) {
             return res.status(401).json({ user: false, msg: "Unauthorized" });
         } else {
-            token = token.split(" ")[1];
-            let authUser = jwt.verify(token, key);
+            const decryptedToken = decryptDES(token.split(" ")[1], desKey);
+            let authUser = jwt.verify(decryptedToken, key);
             req.authUserid = authUser.user_id;
         }
 

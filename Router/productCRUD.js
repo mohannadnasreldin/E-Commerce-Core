@@ -24,9 +24,7 @@ product.post('/productcreate',
 
     async (req, res) => {
         try {
-            // if (!req.file) {
-            //     return res.status(400).json({ msg: ("Error: No Image Selected!").array() });
-            // }
+           
             let error = [];
             const errors = validationResult(req);
             if (!errors.isEmpty() || !req.file) {
@@ -84,9 +82,7 @@ product.put('/productupdate/:id',
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            // if (!req.file) {
-            //     return res.status(400).json({ msg: "Error: No Image Selected!" });
-            // }
+          
 
             const sqlcheck = "SELECT * FROM product WHERE product_id = ?";
             const value = [req.params.id];
@@ -104,11 +100,7 @@ product.put('/productupdate/:id',
                 category_id: req.body.category_id
             };
 
-            // if (req.file) {
-            //     productData.image = req.file.filename;
-            //     fs.unlinkSync("./public/productImg/" + productdetails[0].image);
-            // }
-
+           
             const sqlUpdate = "UPDATE product SET ?  WHERE product_id = ?";
             const values = [productData, req.params.id];
             await query(sqlUpdate, values);
@@ -132,9 +124,7 @@ product.get('/',
                 filter = `where product.category_id = ${req.query.filter}`;
             }
             const productdetails = await query(`select product.product_id, product.product_name, product.price, product.description, product.image,product.category_id, category.category_name from product inner join category on product.category_id = category.category_id ${search} ${filter}`);
-            // productdetails.map((productdetail) => {
-            //     // productdetail.image = "http://" + req.hostname + ":5000/" + productdetail.image;
-            // });
+           
             res.status(200).json(productdetails);
         } catch (err) {
             console.log(err);
@@ -152,7 +142,6 @@ product.get('/productshow/:id',
             if (!productdetails[0]) {
                 return res.status(404).json({ ms: "Product not found !" });
             }
-            // productdetails[0].image = "http://" + req.hostname + ":5000/" + productdetails[0].image;
             res.status(200).json(productdetails[0]);
         } catch (err) {
             console.log(err);
